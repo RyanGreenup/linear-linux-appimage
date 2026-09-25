@@ -1,5 +1,7 @@
 # Linear AppImage repacker
 
+## Overview
+
 Build an x64 Linux AppImage from a Linear Windows installer. The tool extracts
 the bundled Electron app, detects its Electron version, and packages it with the
 matching Linux runtime. It uses the Linear icon embedded in the Windows
@@ -19,6 +21,12 @@ executable.
     https://linear.app/download
 
 [1]: https://releases.linear.app/windows
+
+## Limitations
+
+SSO (including via Google) did not seem to work for me, however, sign in via
+email works fine and Linear will send a one time password for Google SSO which
+met my needs
 
 ## Requirements
 
