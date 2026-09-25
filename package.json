@@ -1,0 +1,16 @@
+{
+  "name": "linear",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@bomb.sh/tab": "^0.0.22",
+    "citty": "^0.2.2"
+  }
+}
