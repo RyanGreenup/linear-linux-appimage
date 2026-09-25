@@ -4,8 +4,10 @@
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@electron/asar": "^4.3.0",
     "@types/bun": "latest",
-    "@types/node": "^26.6.2"
+    "@types/node": "^26.6.2",
+    "electron-builder": "^26.15.3"
   },
   "peerDependencies": {
     "typescript": "^5"
