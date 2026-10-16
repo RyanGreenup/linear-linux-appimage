@@ -1,0 +1,78 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # Renovate cannot recompute the pnpm deps hash in package.nix, so fix it here.
+  # Pushes made with GITHUB_TOKEN do not trigger workflows, so dispatch one.
+  pnpm-hash:
+    if: >-
+      github.event_name == 'pull_request' &&
+      startsWith(github.head_ref, 'renovate/') &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    outputs:
+      updated: ${{ steps.fix.outputs.updated }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: cachix/install-nix-action@v31
+      - id: fix
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if out=$(nix build .#default.pnpmDeps --no-link 2>&1); then
+            echo updated=false >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          got=$(sed -n 's/.*got: *\(sha256-[^ ]*\).*/\1/p' <<<"$out")
+          if [ -z "$got" ]; then echo "$out"; exit 1; fi
+          sed -i "s|hash = \"sha256-[^\"]*\";|hash = \"$got\";|" package.nix
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "fix(deps): update pnpm deps hash"
+          git push
+          gh workflow run ci.yml --ref "$GITHUB_HEAD_REF"
+          echo updated=true >> "$GITHUB_OUTPUT"
+
+  check:
+    needs: pnpm-hash
+    if: >-
+      always() &&
+      needs.pnpm-hash.result != 'failure' &&
+      needs.pnpm-hash.outputs.updated != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: cachix/install-nix-action@v31
+      - run: nix flake check -L
+      - name: Repack the latest Linear release
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/linear.exe" https://releases.linear.app/windows
+          nix run . -- unpack "$RUNNER_TEMP/linear.exe"
+      - name: Launch the AppImage
+        run: |
+          sudo apt-get update && sudo apt-get install -y xvfb
+          cd dist
+          appimage=$(ls Linear-*-x86_64.AppImage)
+          chmod +x "$appimage"
+          ./"$appimage" --appimage-extract >/dev/null
+          test -x squashfs-root/linear
+          test -f squashfs-root/resources/app.asar
+          set +e
+          timeout 30 xvfb-run -a ./squashfs-root/linear --no-sandbox --disable-gpu
+          rc=$?
+          set -e
+          # 124: still running when the timeout fired, i.e. it did not crash
+          if [ "$rc" -ne 124 ]; then echo "Linear exited early with $rc"; exit 1; fi
