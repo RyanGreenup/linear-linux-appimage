@@ -24,7 +24,7 @@ jobs:
     outputs:
       updated: ${{ steps.fix.outputs.updated }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.head_ref }}
       - uses: cachix/install-nix-action@v31
@@ -54,7 +54,7 @@ jobs:
       needs.pnpm-hash.outputs.updated != 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: cachix/install-nix-action@v31
       - run: nix flake check -L
       - name: Repack the latest Linear release
