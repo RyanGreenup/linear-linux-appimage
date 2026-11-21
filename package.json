@@ -10,7 +10,7 @@
     "electron-builder": "^26.15.3"
   },
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5 || ^7.0.0"
   },
   "dependencies": {
     "@bomb.sh/tab": "^0.0.22",
